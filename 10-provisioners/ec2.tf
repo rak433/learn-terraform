@@ -23,18 +23,38 @@ resource "aws_instance" "provisioners" {
     host = self.public_ip
   }
 
-  provisioner "remote-exec" {
+  /* provisioner "remote-exec" {
     inline = [
         "sudo dnf install nginx -y",
         "sudo systemctl start nginx",
         "sudo systemctl enable nginx"
     ]
+  } */
+
+  provisioner "file" {
+    source = "bootstrap.sh"
+    destination = "/tmp/bootstrap.sh"
   }
+
+  provisioner "remote-exec" {
+    inline = [
+        "chmod +x /tmp/bootstrap.sh",
+        "sudo sh /tmp/bootstrap.sh"
+    ]
+  }
+
+  provisioner "remote-exec" {
+  when = destroy
+  inline = [
+    "sudo systemctl stop nginx"
+  ]
+}
 
   tags = {
     Name = "roboshop-provisioners"
   }
 }
+
 
 resource "aws_security_group" "provisioners" {
   name        = "provisioners"
